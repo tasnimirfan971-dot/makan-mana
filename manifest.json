@@ -1,0 +1,8 @@
+{
+  "name": "Makan Mana Hari Ini?",
+  "short_name": "Makan Mana",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f97316"
+}
