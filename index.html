@@ -65,12 +65,17 @@
       font-weight: 600;
     }
 
-    .sound-btn {
+    .controls-right {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mini-btn {
       background: #0f172a;
       color: var(--text);
       border: 1px solid var(--border);
-      padding: 6px 11px;
-      font-size: 0.8rem;
+      padding: 6px 10px;
+      font-size: 0.78rem;
       border-radius: 999px;
       font-weight: 600;
       cursor: pointer;
@@ -246,10 +251,15 @@
   </style>
 </head>
 <body>
+  <audio id="bgMusic" src="lagu.mp3" loop preload="auto"></audio>
+
   <div class="container">
     <div class="top-bar">
       <span class="badge">Android &amp; iOS Ready</span>
-      <button class="sound-btn" id="soundToggle" type="button">🔊 Bunyi: ON</button>
+      <div class="controls-right">
+        <button class="mini-btn" id="musicToggle" type="button">🎵 Lagu: OFF</button>
+        <button class="mini-btn" id="soundToggle" type="button">🔊 SFX: ON</button>
+      </div>
     </div>
 
     <h1>Makan Mana Hari Ini? 🍽️</h1>
@@ -315,11 +325,18 @@
     const addBtn = document.getElementById("addBtn");
     const tagList = document.getElementById("tagList");
     const soundToggle = document.getElementById("soundToggle");
+    const musicToggle = document.getElementById("musicToggle");
+    const bgMusic = document.getElementById("bgMusic");
 
     let currentRotation = 0;
     let lastResultMessage = "";
     let soundEnabled = true;
+    let musicEnabled = false;
     let audioCtx = null;
+
+    if (bgMusic) {
+      bgMusic.volume = 0.45;
+    }
 
     function loadPlaces() {
       try {
@@ -386,9 +403,28 @@
       });
     }
 
+    function syncMusicState() {
+      if (!bgMusic) return;
+      if (musicEnabled) {
+        bgMusic.play().then(() => {
+          musicToggle.textContent = "🎵 Lagu: ON";
+        }).catch(() => {
+          musicToggle.textContent = "🎵 Lagu: TAP";
+        });
+      } else {
+        bgMusic.pause();
+        musicToggle.textContent = "🎵 Lagu: OFF";
+      }
+    }
+
+    musicToggle.addEventListener("click", () => {
+      musicEnabled = !musicEnabled;
+      syncMusicState();
+    });
+
     soundToggle.addEventListener("click", () => {
       soundEnabled = !soundEnabled;
-      soundToggle.textContent = soundEnabled ? "🔊 Bunyi: ON" : "🔇 Bunyi: OFF";
+      soundToggle.textContent = soundEnabled ? "🔊 SFX: ON" : "🔇 SFX: OFF";
       if (soundEnabled) playTick();
     });
 
@@ -456,6 +492,12 @@
     spinBtn.addEventListener("click", () => {
       spinBtn.disabled = true;
       resultBox.style.display = "none";
+
+      if (!musicEnabled && bgMusic) {
+        musicEnabled = true;
+        syncMusicState();
+      }
+
       playTick();
 
       const extraSpins = 5 + Math.floor(Math.random() * 5);
@@ -503,9 +545,9 @@
           document.execCommand("copy");
           document.body.removeChild(temp);
         }
-        shareBtn.textContent = "Done copy for WhatsApp ✅";
+        shareBtn.textContent = "Done Copy For WhatsApp ✅";
         setTimeout(() => {
-          shareBtn.textContent = "Copy for WhatsApp 📋";
+          shareBtn.textContent = "Copy For WhatsApp 📋";
         }, 2500);
       } catch (e) {
         alert("Gagal salin automatik, boleh salin manual dari kotak keputusan.");
