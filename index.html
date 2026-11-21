@@ -7,7 +7,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Makan Mana" />
-  <link rel="manifest" href="manifest.json" />
+  <link id="faviconLink" rel="icon" type="image/png" />
+  <link id="appleIconLink" rel="apple-touch-icon" sizes="512x512" />
+  <link id="manifestLink" rel="manifest" href="manifest.json" />
   <title>Makan Mana Hari Ini? 🍛</title>
   <style>
     :root {
@@ -251,7 +253,7 @@
   </style>
 </head>
 <body>
-  <audio id="bgMusic" src="jealousy.mp3" loop preload="auto"></audio>
+  <audio id="bgMusic" src="lagu.mp3" loop preload="auto"></audio>
 
   <div class="container">
     <div class="top-bar">
@@ -291,6 +293,64 @@
   </div>
 
   <script>
+    // Jana ikon PNG 512x512 automatik untuk iOS & Android supaya gambar cun
+    (function generateAppIcon() {
+      const iconCanvas = document.createElement("canvas");
+      iconCanvas.width = 512;
+      iconCanvas.height = 512;
+      const ictx = iconCanvas.getContext("2d");
+
+      // Latar belakang gelap
+      ictx.fillStyle = "#0f172a";
+      ictx.fillRect(0, 0, 512, 512);
+
+      // Bulatan roda mini berwarna-warni di tengah
+      const sliceColors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#8b5cf6"];
+      const arc = (2 * Math.PI) / sliceColors.length;
+      sliceColors.forEach((col, idx) => {
+        ictx.beginPath();
+        ictx.fillStyle = col;
+        ictx.moveTo(256, 256);
+        ictx.arc(256, 256, 175, idx * arc, (idx + 1) * arc);
+        ictx.fill();
+      });
+
+      // Bulatan tengah gelap
+      ictx.beginPath();
+      ictx.fillStyle = "#1e293b";
+      ictx.arc(256, 256, 95, 0, 2 * Math.PI);
+      ictx.fill();
+
+      // Emoji pinggan di tengah
+      ictx.font = "110px sans-serif";
+      ictx.textAlign = "center";
+      ictx.textBaseline = "middle";
+      ictx.fillText("🍽️", 256, 264);
+
+      const pngUrl = iconCanvas.toDataURL("image/png");
+      document.getElementById("faviconLink").href = pngUrl;
+      document.getElementById("appleIconLink").href = pngUrl;
+
+      // Kemas kini manifest dengan ikon PNG yang baru dijana
+      const dynamicManifest = {
+        name: "Makan Mana Hari Ini?",
+        short_name: "Makan Mana",
+        start_url: window.location.href.split("?")[0],
+        display: "standalone",
+        background_color: "#0f172a",
+        theme_color: "#f97316",
+        icons: [
+          {
+            src: pngUrl,
+            sizes: "512x512",
+            type: "image/png"
+          }
+        ]
+      };
+      const blob = new Blob([JSON.stringify(dynamicManifest)], { type: "application/json" });
+      document.getElementById("manifestLink").href = URL.createObjectURL(blob);
+    })();
+
     const STORAGE_KEY = "makan_mana_places_v1";
     const defaultPlaces = [
       "Mamak 24 Jam",
@@ -545,9 +605,9 @@
           document.execCommand("copy");
           document.body.removeChild(temp);
         }
-        shareBtn.textContent = "Done Copy For WhatsApp ✅";
+        shareBtn.textContent = "Tersalin! Tampal di WhatsApp ✅";
         setTimeout(() => {
-          shareBtn.textContent = "Copy For WhatsApp 📋";
+          shareBtn.textContent = "Salin Keputusan ke WhatsApp 📋";
         }, 2500);
       } catch (e) {
         alert("Gagal salin automatik, boleh salin manual dari kotak keputusan.");
