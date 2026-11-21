@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Makan Mana Hari Ini? 🍛</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #f97316;
+      --accent-hover: #ea580c;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
+    }
+
+    p.subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .wheel-wrapper {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto 20px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 6px solid #334155;
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    }
+
+    .pointer {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 24px solid #ef4444;
+      z-index: 10;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .result-box {
+      margin-top: 18px;
+      padding: 16px;
+      background: #0f172a;
+      border-radius: 14px;
+      border: 1px solid #334155;
+      display: none;
+    }
+
+    .result-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fbbf24;
+      margin-bottom: 6px;
+    }
+
+    .dare-text {
+      font-size: 0.9rem;
+      color: #38bdf8;
+      margin-bottom: 12px;
+    }
+
+    .share-btn {
+      background: #22c55e;
+      font-size: 0.85rem;
+      padding: 8px 14px;
+    }
+
+    .share-btn:hover {
+      background: #16a34a;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: white;
+      outline: none;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+      justify-content: center;
+    }
+
+    .tag {
+      background: #334155;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tag span {
+      cursor: pointer;
+      color: #f87171;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Makan Mana Hari Ini? 🍽️</h1>
+    <p class="subtitle">Untuk geng yang selalu jawab "Aku tak kisah"</p>
+
+    <div class="wheel-wrapper">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="400" height="400"></canvas>
+    </div>
+
+    <button id="spinBtn">PUTAR SEKARANG 🎲</button>
+
+    <div class="result-box" id="resultBox">
+      <div class="result-title" id="winnerText"></div>
+      <div class="dare-text" id="dareText"></div>
+      <button class="share-btn" id="shareBtn">Salin Keputusan ke WhatsApp 📋</button>
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="placeInput" placeholder="Tambah kedai (cth: Nasi Kandar)" />
+      <button id="addBtn" style="padding: 10px 16px;">+</button>
+    </div>
+
+    <div class="tags" id="tagList"></div>
+  </div>
+
+  <script>
+    // Senarai kedai lalai (boleh ubah ikut kawasan korang)
+    let places = [
+      "Mamak 24 Jam",
+      "Ayam Gepuk",
+      "Nasi Kandar",
+      "Tomyam Seafood",
+      "Burger Tepian",
+      "Mee Tarik"
+    ];
+
+    // Cabaran / penalti kelakar rawak
+    const dares = [
+      "Syarat: Yang tekan butang spin wajib belanja air semua orang! 🥤",
+      "Syarat: Siapa paling lambat sampai kedai kena bayar semua. 💸",
+      "Syarat: Tak boleh order air kosong hari ni, wajib order air manis! 🧋",
+      "Syarat: Keputusan muktamad! Siapa bantah kena pilih kedai lain dalam 5 saat. ⏱️",
+      "Syarat: Yang paling banyak cakap 'tak kisah' tadi kena ambilkan sudu & tisu. 🍴",
+      "Syarat: Semua orang wajib letak phone atas meja sampai makanan sampai. 📵"
+    ];
+
+    const colors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#8b5cf6", "#ec4899"];
+
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spinBtn");
+    const resultBox = document.getElementById("resultBox");
+    const winnerText = document.getElementById("winnerText");
+    const dareText = document.getElementById("dareText");
+    const shareBtn = document.getElementById("shareBtn");
+    const placeInput = document.getElementById("placeInput");
+    const addBtn = document.getElementById("addBtn");
+    const tagList = document.getElementById("tagList");
+
+    let currentRotation = 0;
+    let lastResultMessage = "";
+
+    function drawWheel() {
+      const numOptions = places.length;
+      const arcSize = (2 * Math.PI) / numOptions;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      places.forEach((place, i) => {
+        const angle = i * arcSize;
+        ctx.beginPath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.moveTo(200, 200);
+        ctx.arc(200, 200, 200, angle, angle + arcSize);
+        ctx.fill();
+
+        // Teks nama kedai
+        ctx.save();
+        ctx.translate(200, 200);
+        ctx.rotate(angle + arcSize / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 18px sans-serif";
+        ctx.fillText(place, 175, 6);
+        ctx.restore();
+      });
+    }
+
+    function renderTags() {
+      tagList.innerHTML = "";
+      places.forEach((place, index) => {
+        const tag = document.createElement("div");
+        tag.className = "tag";
+        tag.innerHTML = `${place} <span onclick="removePlace(${index})">×</span>`;
+        tagList.appendChild(tag);
+      });
+    }
+
+    window.removePlace = function(index) {
+      if (places.length <= 2) {
+        alert("Kena ada sekurang-kurangnya 2 pilihan kedai!");
+        return;
+      }
+      places.splice(index, 1);
+      drawWheel();
+      renderTags();
+    };
+
+    addBtn.addEventListener("click", () => {
+      const val = placeInput.value.trim();
+      if (val) {
+        places.push(val);
+        placeInput.value = "";
+        drawWheel();
+        renderTags();
+      }
+    });
+
+    placeInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") addBtn.click();
+    });
+
+    spinBtn.addEventListener("click", () => {
+      spinBtn.disabled = true;
+      resultBox.style.display = "none";
+
+      const extraSpins = 5 + Math.floor(Math.random() * 5);
+      const randomDegree = Math.floor(Math.random() * 360);
+      currentRotation += extraSpins * 360 + randomDegree;
+
+      canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+      setTimeout(() => {
+        const actualDeg = currentRotation % 360;
+        // Penunjuk berada di atas (270 darjah dalam sistem koordinat kanvas)
+        const pointerAngle = (270 - actualDeg + 360) % 360;
+        const sliceDeg = 360 / places.length;
+        const winningIndex = Math.floor(pointerAngle / sliceDeg);
+
+        const chosenPlace = places[winningIndex];
+        const randomDare = dares[Math.floor(Math.random() * dares.length)];
+
+        winnerText.textContent = `🎉 Kita makan: ${chosenPlace}!`;
+        dareText.textContent = randomDare;
+        resultBox.style.display = "block";
+        spinBtn.disabled = false;
+
+        lastResultMessage = `Keputusan Geng Hari Ini 🍽️\nLokasi: *${chosenPlace}*\n${randomDare}\n\nJom gerak sekarang!`;
+      }, 4000);
+    });
+
+    shareBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(lastResultMessage).then(() => {
+        shareBtn.textContent = "Tersalin! Tampal di WhatsApp ✅";
+        setTimeout(() => {
+          shareBtn.textContent = "Salin Keputusan ke WhatsApp 📋";
+        }, 2500);
+      });
+    });
+
+    drawWheel();
+    renderTags();
+  </script>
+</body>
+</html>
